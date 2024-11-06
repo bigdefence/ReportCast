@@ -39,14 +39,14 @@ GOOGLE_API_KEY=your_google_api_key_here
 #### 실행 방법
 - Flask 앱 실행:
 ```
-python app.py
+python main.py
 ```
 웹 브라우저에서 http://127.0.0.1:5000에 접속하여 애플리케이션을 사용할 수 있습니다.
 
 #### 주요 코드 설명
 ```plaintext
 파일 구조
-├── app.py                  # 메인 Flask 애플리케이션 파일
+├── main.py                  # 메인 Flask 애플리케이션 파일
 ├── templates/
 │   └── index.html          # 프론트엔드 HTML 파일
 ├── .env                    # Google API 키 설정 파일
