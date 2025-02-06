@@ -1,4 +1,4 @@
-# 팟캐스트 및 보고서 생성 애플리케이션
+# ReportCast(실시간 인공지능 검색으로 팟캐스트 및 보고서 생성 애플리케이션)
 
 이 프로젝트는 Gemini API와 다양한 서비스를 활용하여 사용자가 입력한 쿼리를 바탕으로 팟캐스트(오디오 파일)와 PDF 보고서를 생성하는 Flask 웹 애플리케이션입니다.  
 검색 결과를 기반으로 스크립트 생성, 음성 합성, 배경 음악 추가, 그리고 고퀄리티 보고서 생성을 지원합니다.
@@ -69,14 +69,6 @@ GEMINI_API_KEY=your_gemini_api_key_here
 ### 4. 애플리케이션 실행
 
 가상환경을 활성화한 후 아래 명령어를 통해 애플리케이션을 실행합니다.
-
-```bash
-export FLASK_APP=app.py
-flask run
-```
-
-또는 Python 스크립트를 직접 실행할 수 있습니다.
-
 ```bash
 python app.py
 ```
@@ -117,14 +109,6 @@ python app.py
 - **서비스 함수 구현**: `services/models.py` 내의 `generate_script`, `generate_audio`, `add_background_music` 함수는 각자의 로직에 맞게 구현되어야 합니다.
 - **텍스트 처리**: `utils/text_processing.py` 내의 `process_query` 함수는 검색 쿼리 최적화를 위해 사용됩니다.
 - **Gemini API**: Google Gemini API를 사용하여 콘텐츠를 생성합니다. 사용 전 [Google Gemini API 문서](https://developers.google.com/genai)를 참고하여 필요한 옵션들을 확인하세요.
-
-## 기여
-
-1. 이 저장소를 포크합니다.
-2. 새로운 브랜치를 생성합니다: `git checkout -b feature/새로운기능`
-3. 변경 사항을 커밋합니다: `git commit -m '새로운 기능 추가'`
-4. 브랜치에 푸시합니다: `git push origin feature/새로운기능`
-5. Pull Request를 생성합니다.
 
 ## 라이선스
 
