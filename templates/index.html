@@ -1,432 +1,327 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Search</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <style>
-        .gradient-bg {
-            background: linear-gradient(120deg, #6366f1, #8b5cf6);
-        }
-        .chat-container {
-            height: calc(100vh - 80px);
-        }
-        .source-link {
-            transition: all 0.3s ease;
-        }
-        .source-link:hover {
-            transform: translateY(-2px);
-        }
-        .sidebar {
-            width: 260px;
-            background: #f8fafc;
-            border-right: 1px solid #e2e8f0;
-        }
-        .main-content {
-            width: calc(100% - 260px);
-        }
-        .message {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .user-message {
-            background-color: #f8fafc;
-        }
-        .ai-message {
-            background-color: white;
-        }
-        .source-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.75rem;
-            padding: 0.875rem;
-            margin-bottom: 0.75rem;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .source-card:hover {
-            border-color: #8b5cf6;
-            background-color: #f9fafb;
-        }
-        .source-icon {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            color: #6b7280;
-        }
-        .sources-container {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e5e7eb;
-        }
-        .sources-title {
-            font-size: 0.875rem;
-            color: #6b7280;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .input-container {
-            border: 1px solid #e2e8f0;
-            border-radius: 1rem;
-            background: white;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            padding: 1rem;
-        }
-
-        .input-container:focus-within {
-            border-color: #6366f1;
-            box-shadow: 0 0 15px rgba(99,102,241,0.1);
-        }
-
-        .message-content {
-            line-height: 1.6;
-            font-size: 1rem;
-            color: #374151;
-        }
-
-        .message-content p {
-            margin-bottom: 1rem;
-        }
-
-        .message-content pre {
-            background: #f8fafc;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-
-        .message-content code {
-            font-family: monospace;
-            background: #f1f5f9;
-            padding: 0.2rem 0.4rem;
-            border-radius: 0.25rem;
-        }
-
-        .spinner-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin: 1rem 0;
-            color: #6366f1;
-        }
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 4px solid #e5e7eb;
-            border-top-color: #6366f1;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .auto-resize-textarea {
-            min-height: 24px;
-            max-height: 200px;
-            overflow-y: hidden;
-        }
-
-    </style>
-</head>
-<body class="bg-white">
-    <div class="flex h-screen">
-        <!-- 사이드바 -->
-        <aside class="sidebar overflow-y-auto">
-            <div class="p-4">
-                <h1 class="text-xl font-bold text-gray-800 mb-4">Gemini Search</h1>
-                <button onclick="startNewChat()" 
-                    class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors mb-4">
-                    대화 삭제
-                </button>
-                <div id="chat-history" class="space-y-2">
-                    <!-- 채팅 기록이 여기에 추가됩니다 -->
-                </div>
-                <div class="mt-4">
-                    <h2 class="text-sm font-medium text-gray-700 mb-2">참고한 웹 소스</h2>
-                    <div id="sidebar-sources" class="space-y-2">
-                        <!-- 참고 소스가 여기에 추가됩니다 -->
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- 메인 컨텐츠 -->
-        <main class="main-content flex flex-col">
-            <!-- 채팅 컨테이너 -->
-            <div class="chat-container flex-1 overflow-y-auto">
-                <div id="messages" class="pb-32">
-                    <!-- 메시지들이 여기에 추가됩니다 -->
-                </div>
-            </div>
-
-            <!-- 입력 영역 -->
-            <div class="border-t border-gray-200 bg-white p-4 fixed bottom-0 w-full" style="width: calc(100% - 260px);">
-                <div class="max-w-3xl mx-auto">
-                    <div class="input-container">
-                        <form onsubmit="handleSubmit(event)" class="flex items-end gap-2">
-                            <div class="flex-1 relative">
-                                <textarea id="prompt" 
-                                    class="w-full p-2 pr-10 bg-transparent border-none focus:ring-0 auto-resize-textarea"
-                                    rows="1"
-                                    placeholder="메시지를 입력하세요..."
-                                    onkeydown="handleKeyPress(event)"
-                                    oninput="autoResize(this)"></textarea>
-                            </div>
-                            <button type="submit"
-                                class="p-2 text-purple-600 hover:text-purple-700 transition-colors disabled:opacity-50"
-                                id="submit-button">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                                </svg>
-                            </button>
-                        </form>
-                    </div>
-                    <div class="text-xs text-gray-500 mt-2 text-center">
-                        Enter 키로 전송, Shift + Enter 키로 줄바꿈
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script>
-        let chatHistory = [];
-
-        function startNewChat() {
-            document.getElementById('messages').innerHTML = '';
-            document.getElementById('prompt').value = '';
-            document.getElementById('sidebar-sources').innerHTML = '';
-            chatHistory = [];
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                generateResponse();
-            }
-        }
-
-        function addMessage(content, type, sources = null) {
-            const messagesDiv = document.getElementById('messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}-message`;
-            
-            let messageContent = `
-                <div class="max-w-3xl mx-auto">
-                    <div class="flex items-start gap-4">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center ${type === 'user' ? 'bg-purple-600' : 'bg-gray-600'}">
-                            <span class="text-white text-sm">${type === 'user' ? 'U' : 'AI'}</span>
-                        </div>
-                        <div class="flex-1">
-                            <div class="message-content">
-                                ${content}
-                            </div>
-                            ${sources ? renderSources(sources) : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            messageDiv.innerHTML = messageContent;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        function renderSources(sources) {
-            if (!sources || sources.length === 0) return '';
-            
-            return `
-                <div class="sources-container">
-                    <div class="sources-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                        </svg>
-                        <span>참고 소스</span>
-                    </div>
-                    <div class="space-y-2">
-                        ${sources.map(source => `
-                            <a href="${source.url}" target="_blank" class="source-card">
-                                <svg class="source-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                </svg>
-                                <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-medium text-purple-600 truncate">
-                                        ${source.title}
-                                    </div>
-                                    <div class="text-xs text-gray-500 mt-0.5 truncate">
-                                        ${new URL(source.url).hostname}
-                                    </div>
-                                </div>
-                                <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                            </a>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        }
-
-        function handleSubmit(event) {
-            event.preventDefault();
-            generateResponse();
-        }
-
-        function formatMessage(content) {
-            return content
-                .replace(/\n/g, '<br>')
-                .replace(/`([^`]+)`/g, '<code>$1</code>')
-                .replace(/```(\w*)\n([\s\S]*?)\n```/g, (_, lang, code) => `
-                    <pre class="bg-gray-50 p-4 rounded-lg overflow-x-auto">
-                        <code class="language-${lang}">${code.trim()}</code>
-                    </pre>
-                `);
-        }
-
-        function updateSidebarSources(sources) {
-            const sidebarSourcesDiv = document.getElementById('sidebar-sources');
-            if (!sources || sources.length === 0) {
-                sidebarSourcesDiv.innerHTML = '<div class="text-sm text-gray-500">아직 참고한 소스가 없습니다.</div>';
-                return;
-            }
-            
-            sidebarSourcesDiv.innerHTML = sources.map(source => `
-                <a href="${source.url}" target="_blank" class="source-card">
-                    <svg class="source-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                    </svg>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-sm font-medium text-purple-600 truncate">
-                            ${source.title}
-                        </div>
-                        <div class="text-xs text-gray-500 mt-0.5 truncate">
-                            ${new URL(source.url).hostname}
-                        </div>
-                    </div>
-                </a>
-            `).join('');
-        }
-
-        async function generateResponse() {
-        const promptInput = document.getElementById('prompt');
-        const submitButton = document.getElementById('submit-button');
-        const prompt = promptInput.value.trim();
-        
-        if (!prompt) return;
-
-        // UI 비활성화
-        promptInput.disabled = true;
-        submitButton.disabled = true;
-
-        // 사용자 메시지 추가
-        addMessage(formatMessage(prompt), 'user');
-        promptInput.value = '';
-        promptInput.style.height = 'auto';
-
-        // AI 메시지 컨테이너 생성
-        const messagesDiv = document.getElementById('messages');
-        const aiMessageDiv = document.createElement('div');
-        aiMessageDiv.className = 'message ai-message';
-        aiMessageDiv.innerHTML = `
-                <div class="max-w-3xl mx-auto">
-                    <div class="flex items-start gap-4">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-600">
-                            <span class="text-white text-sm">AI</span>
-                        </div>
-                        <div class="flex-1">
-                            <div class="message-content"></div>
-                            <div class="spinner-container">
-                                <div class="spinner"></div>
-                                <span>웹사이트 검색 중...</span>
-                            </div>
-                            <div class="sources-wrapper"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        messagesDiv.appendChild(aiMessageDiv);
-
-        const messageContent = aiMessageDiv.querySelector('.message-content');
-        const spinnerContainer = aiMessageDiv.querySelector('.spinner-container');
-        const sourcesWrapper = aiMessageDiv.querySelector('.sources-wrapper');
-        let fullResponse = '';
-
-        try {
-            const response = await fetch('/generate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ prompt }),
-            });
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const data = JSON.parse(line.slice(6));
-
-                            if (data.text) {
-                                fullResponse += data.text;
-                                messageContent.innerHTML = formatMessage(fullResponse);
-                                aiMessageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                            }
-
-                            if (data.done && data.sources) {
-                                // 응답 완료 후 spinner 제거
-                                spinnerContainer.remove();
-
-                                // 소스 추가
-                                sourcesWrapper.innerHTML = renderSources(data.sources);
-                                updateSidebarSources(data.sources);
-                                
-                                chatHistory.push({
-                                    prompt,
-                                    response: fullResponse,
-                                    sources: data.sources
-                                });
-                            }
-                        } catch (e) {
-                            console.error('JSON 파싱 오류:', e);
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('API 요청 오류:', error);
-            messageContent.innerHTML = '요청 처리 중 오류가 발생했습니다.';
-            spinnerContainer.remove(); // 오류 발생 시 spinner 제거
-        } finally {
-            // UI 재활성화
-            promptInput.disabled = false;
-            submitButton.disabled = false;
-            promptInput.focus();
-        }
+  <meta charset="UTF-8">
+  <title>SearchCast</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- 부트스트랩 CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- marked.js 라이브러리 (마크다운 파서) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* 전반적인 폰트 및 배경 설정 */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #f6f9fc, #e9eff5);
+      margin: 0;
+      padding: 0;
     }
-    </script>
+    /* 채팅 컨테이너 */
+    .chat-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background: #fff;
+    }
+    /* 왼쪽 사이드바 (팟캐스트, 보고서, 출처) */
+    .sidebar {
+      width: 320px;
+      background-color: #2f3e46;
+      color: #fff;
+      padding: 20px;
+      overflow-y: auto;
+      border-right: 2px solid #354f52;
+    }
+    .sidebar h5 {
+      margin-bottom: 15px;
+      font-weight: 700;
+      color: #cad2c5;
+    }
+    .sidebar hr {
+      border-color: #354f52;
+    }
+    /* 소스 및 보고서 항목 스타일 (제목만 링크로 표시) */
+    .source-item, #report-container {
+      margin-bottom: 12px;
+      padding: 8px;
+      background-color: #3a4b52;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+    }
+    .source-item:hover, #report-container:hover {
+      background-color: #4a5b62;
+    }
+    .source-link {
+      font-weight: 500;
+      color: #84a98c;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .source-link:hover {
+      text-decoration: underline;
+    }
+    /* 오른쪽 메인 영역 (챗봇 대화) */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      background: #f6f9fc;
+      overflow-y: auto;
+    }
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+      white-space: normal;
+    }
+    /* 마크다운으로 렌더링된 텍스트의 문단 스타일 */
+    .chat-area p {
+      margin: 0 0 1rem;
+      line-height: 1.6;
+    }
+    /* 채팅 버블 스타일 */
+    .chat-bubble {
+      padding: 12px 16px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+      max-width: 75%;
+      word-wrap: break-word;
+      line-height: 1.4;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      background-color: #fff;
+    }
+    .chat-bubble.user {
+      background-color: #d1e7dd;
+      align-self: flex-end;
+      color: #0f5132;
+    }
+    .chat-bubble.bot {
+      background-color: #f8d7da;
+      align-self: flex-start;
+      color: #842029;
+    }
+    /* 로딩 스피너 */
+    .loading-spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top-color: #0d6efd;
+      animation: spin 1s ease-in-out infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* 입력 폼 */
+    .input-container {
+      margin-top: 10px;
+    }
+    .input-container .form-control {
+      border-radius: 30px;
+      padding: 12px 20px;
+      border: 1px solid #ced4da;
+      box-shadow: none;
+      font-size: 1rem;
+      height: 50px;
+    }
+    /* 전송 버튼 */
+    .input-container .btn {
+      border-radius: 30px;
+      padding: 12px 20px;
+      font-weight: 500;
+      font-size: 1rem;
+      height: 50px;
+      border: 1px solid #ced4da;
+      background-color: #0d6efd;
+      color: #fff;
+      transition: background-color 0.3s;
+    }
+    .input-container .btn:hover {
+      background-color: #0b5ed7;
+    }
+    .input-group {
+      flex-wrap: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <!-- 왼쪽 사이드바: 팟캐스트, 보고서, 출처 -->
+    <div class="sidebar">
+      <h5>팟캐스트</h5>
+      <audio id="podcast-audio" controls style="width: 100%;">
+        <source src="" type="audio/mpeg">
+        브라우저가 오디오 태그를 지원하지 않습니다.
+      </audio>
+      <hr>
+      <h5>보고서</h5>
+      <div id="report-container">
+        <p>보고서 없음</p>
+      </div>
+      <hr>
+      <h5>출처</h5>
+      <div id="sources-list">
+        <p>출처 없음</p>
+      </div>
+    </div>
+    <!-- 오른쪽 메인 영역: 챗봇 대화 -->
+    <div class="main">
+      <div id="chat-area" class="chat-area"></div>
+      <div class="input-container">
+        <form id="query-form">
+          <div class="input-group">
+            <input type="text" id="query-input" class="form-control" placeholder="쿼리를 입력하세요..." required>
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-primary">전송</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('query-form');
+    const queryInput = document.getElementById('query-input');
+    const chatArea = document.getElementById('chat-area');
+    const podcastAudio = document.getElementById('podcast-audio');
+    const sourcesList = document.getElementById('sources-list');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const query = queryInput.value.trim();
+      if (!query) return;
+      queryInput.value = '';
+
+      // 사용자 메시지 추가
+      appendChatBubble('user', `<strong>사용자:</strong><br>${query}`);
+
+      // 봇 메시지 추가 (검색 결과 스트리밍 초기 메시지)
+      const botBubbleId = 'bot-' + Date.now();
+      appendChatBubble('bot', `<strong>봇:</strong><br><span id="${botBubbleId}"><span class="loading-spinner"></span> 검색 중...</span>`);
+      
+      // SSE를 이용하여 검색 결과 스트리밍 (마크다운 파서를 이용해 텍스트 포맷 적용)
+      const evtSource = new EventSource(`/stream_search?query=${encodeURIComponent(query)}`);
+      const botResponseElem = document.getElementById(botBubbleId);
+      let markdownContent = "";
+      evtSource.onmessage = function(event) {
+        if (event.data.trim() === "") {
+          // 스트리밍 종료 신호 수신 시 연결 종료 후 팟캐스트 및 보고서 생성
+          evtSource.close();
+          generatePodcast(query);
+          generateReport(query);
+        } else {
+          markdownContent += event.data;
+          // marked 라이브러리로 마크다운 형식의 HTML 생성
+          botResponseElem.innerHTML = marked.parse(markdownContent);
+          chatArea.scrollTop = chatArea.scrollHeight;
+        }
+      };
+
+      evtSource.onerror = function(event) {
+        evtSource.close();
+        generatePodcast(query);
+        generateReport(query);
+      };
+    });
+
+    function appendChatBubble(sender, htmlContent) {
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble ' + sender;
+      bubble.innerHTML = htmlContent;
+      chatArea.appendChild(bubble);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function generatePodcast(query) {
+      // 팟캐스트 생성 로딩 중 메시지
+      const loadingBubble = document.createElement('div');
+      loadingBubble.className = 'chat-bubble bot';
+      loadingBubble.id = 'podcast-loading';
+      loadingBubble.innerHTML = `<div class="loading-spinner"></div> 팟캐스트 생성중...`;
+      chatArea.appendChild(loadingBubble);
+      chatArea.scrollTop = chatArea.scrollHeight;
+
+      const formData = new FormData();
+      formData.append("query", query);
+
+      fetch('/generate_podcast', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        // 생성 완료 시 로딩 스피너 제거
+        loadingBubble.remove();
+        if (data.error) {
+          appendChatBubble('bot', `<strong>봇:</strong><br>오류 발생: ${data.error}`);
+        } else {
+          // 팟캐스트 플레이어 업데이트
+          podcastAudio.querySelector('source').src = data.podcast_url;
+          podcastAudio.load();
+          // 출처 업데이트: 제목만 링크로 표시
+          if (data.sources && data.sources.length > 0) {
+            sourcesList.innerHTML = "";
+            data.sources.forEach(source => {
+              const sourceItem = document.createElement('div');
+              sourceItem.className = 'source-item';
+              sourceItem.innerHTML = `
+                <a href="${source.url}" target="_blank" class="source-link">
+                  ${source.title}
+                </a>
+              `;
+              sourcesList.appendChild(sourceItem);
+            });
+          } else {
+            sourcesList.innerHTML = "<p>출처 없음</p>";
+          }
+        }
+      })
+      .catch(error => {
+        loadingBubble.remove();
+        appendChatBubble('bot', `<strong>봇:</strong><br>오류 발생: ${error}`);
+      });
+    }
+
+    function generateReport(query) {
+      const reportContainer = document.getElementById('report-container');
+      // 보고서 생성 중 메시지 표시
+      reportContainer.innerHTML = `<div class="loading-spinner"></div> 보고서 생성중...`;
+
+      const formData = new FormData();
+      formData.append("query", query);
+
+      fetch('/generate_report', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          reportContainer.innerHTML = `<p>오류 발생: ${data.error}</p>`;
+        } else {
+          // 보고서 URL을 링크 형태로 표시
+          reportContainer.innerHTML = `
+            <a href="${data.report_url}" target="_blank" class="source-link">
+              보고서 보기
+            </a>
+          `;
+        }
+      })
+      .catch(error => {
+        reportContainer.innerHTML = `<p>오류 발생: ${error}</p>`;
+      });
+    }
+  </script>
 </body>
-</html> 
+</html>
