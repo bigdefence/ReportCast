@@ -4,7 +4,11 @@
 검색 결과를 기반으로 스크립트 생성, 음성 합성, 배경 음악 추가, 그리고 고퀄리티 보고서 생성을 지원합니다.
 
 
-https://github.com/user-attachments/assets/48c18998-620e-4121-9dd8-63040d728005
+
+
+
+https://github.com/user-attachments/assets/0140a255-39ab-415b-a241-86dc8bc5b52f
+
 
 
 
