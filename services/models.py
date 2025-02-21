@@ -1,27 +1,13 @@
 import openai
-import google.generativeai as genai
-from utils.config import OPENAI_API_KEY, GEMINI_API_KEY
+from utils.config import OPENAI_API_KEY
 from typing import Optional, Dict, Any, List
 from pydub import AudioSegment
 openai.api_key = OPENAI_API_KEY
-genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel('gemini-1.5-flash-002')
 
 
 
 def generate_script(query: str, search_results: str, 
                        duration_minutes: int = 5) -> str:
-    """
-    Generates a strictly formatted podcast script for two AI hosts.
-    
-    Args:
-        query (str): The topic of the podcast.
-        search_results (str): The results of the search to be used in the script.
-        duration_minutes (int): The desired duration of the podcast in minutes.
-
-    Returns:
-        str: The generated script in a strict format that can be reliably parsed.
-    """
     system_prompt = """You are an expert Korean podcast script writer. Your task is to create a precisely formatted script 
 that follows strict formatting rules. The podcast features two AI hosts:
 
