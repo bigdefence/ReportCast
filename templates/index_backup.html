@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>ReportCast</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap CSS (기본 컴포넌트 활용) -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- marked.js 라이브러리 (마크다운 파서) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* CSS 변수로 색상 및 스타일 지정 */
+    :root {
+      --primary-color: #4A90E2;
+      --primary-gradient: linear-gradient(45deg, #4A90E2, #9013FE);
+      --btn-hover: #357ABD;
+      --background: #F5F7FA;
+      --sidebar-bg: #FFFFFF;
+      --sidebar-border: #E0E0E0;
+      --chat-bg: #FFFFFF;
+      --chat-border: #E6E6E6;
+      --chat-user-bg: #DCF8C6;
+      --chat-bot-bg: #F1F0F0;
+      --font-color: #333;
+    }
+
+    /* 전역 스타일 */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--background);
+      margin: 0;
+      padding: 0;
+      color: var(--font-color);
+    }
+    .chat-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 사이드바 스타일 */
+    .sidebar {
+      width: 300px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+    }
+    .sidebar h5 {
+      font-size: 1.25rem;
+      margin-bottom: 15px;
+      border-bottom: 2px solid var(--sidebar-border);
+      padding-bottom: 10px;
+      color: #555;
+    }
+    .sidebar hr {
+      margin: 15px 0;
+      border: none;
+      border-top: 1px solid var(--sidebar-border);
+    }
+    .source-item {
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+    .source-item:hover {
+      background: #f7f7f7;
+    }
+    .source-link {
+      color: var(--primary-color);
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .source-link:hover {
+      text-decoration: underline;
+    }
+    #report-container {
+      padding: 10px;
+      border-radius: 6px;
+      background: #fff;
+      transition: background 0.3s;
+    }
+    #report-container:hover {
+      background: #f7f7f7;
+    }
+
+    /* 메인 영역 스타일 */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      background: var(--background);
+      overflow-y: auto;
+    }
+    .chat-area {
+      flex: 1;
+      background: var(--chat-bg);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      overflow-y: auto;
+      border: 1px solid var(--chat-border);
+    }
+
+    /* 채팅 버블 스타일 */
+    .chat-bubble {
+      max-width: 75%;
+      padding: 15px 20px;
+      border-radius: 20px;
+      margin: 10px 0;
+      line-height: 1.6;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      position: relative;
+    }
+    .chat-bubble.user {
+      background: var(--chat-user-bg);
+      color: #2d6a4f;
+      align-self: flex-end;
+      border-bottom-right-radius: 0;
+    }
+    .chat-bubble.bot {
+      background: var(--chat-bot-bg);
+      color: #6c757d;
+      align-self: flex-start;
+      border-bottom-left-radius: 0;
+    }
+
+    /* 입력 폼 스타일 */
+    .input-container {
+      display: flex;
+      align-items: center;
+    }
+    .form-control {
+      border-radius: 25px;
+      height: 50px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      padding: 0 20px;
+      transition: border-color 0.3s;
+    }
+    .form-control:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 8px rgba(74, 144, 226, 0.3);
+    }
+
+    /* 모던한 버튼 스타일 */
+    .btn {
+      border-radius: 25px;
+      height: 50px;
+      font-weight: 500;
+      background: var(--primary-gradient);
+      border: none;
+      color: #fff;
+      padding: 0 25px;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .btn:hover {
+      background: var(--btn-hover);
+      transform: translateY(-2px);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    /* 로딩 스피너 스타일 */
+    .loading-spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 반응형 스타일 */
+    @media (max-width: 768px) {
+      .chat-container {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--sidebar-border);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <!-- 좌측 사이드바 -->
+    <div class="sidebar">
+      <h5>팟캐스트</h5>
+      <button id="generate-podcast-btn" class="btn btn-secondary btn-block mb-3">팟캐스트 생성</button>
+      <!-- 팟캐스트 플레이어 (기본 숨김) -->
+      <audio id="podcast-audio" controls style="width: 100%; display: none;">
+        <source src="" type="audio/mpeg">
+        브라우저가 오디오 태그를 지원하지 않습니다.
+      </audio>
+      <hr>
+      <h5>보고서</h5>
+      <button id="generate-report-btn" class="btn btn-secondary btn-block mb-3">보고서 생성</button>
+      <div id="report-container">
+        <p>보고서 없음</p>
+      </div>
+      <hr>
+      <h5>출처</h5>
+      <div id="sources-list">
+        <p>출처 없음</p>
+      </div>
+    </div>
+    <!-- 우측 메인 영역 -->
+    <div class="main">
+      <div id="chat-area" class="chat-area"></div>
+      <div class="input-container">
+        <form id="query-form" style="flex: 1;">
+          <div class="input-group">
+            <input type="text" id="query-input" class="form-control" placeholder="쿼리를 입력하세요..." required>
+          </div>
+        </form>
+        <!-- 모델 선택 드롭다운 추가 -->
+        <select id="model-select" name="model" class="ml-3" style="height:50px; border-radius:25px; padding:0 10px;">
+          <option value="flash-2.0">flash-2.0</option>
+          <option value="thinking">thinking</option>
+        </select>
+        <button type="submit" form="query-form" class="btn ml-3">전송</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('query-form');
+    const queryInput = document.getElementById('query-input');
+    const chatArea = document.getElementById('chat-area');
+    const modelSelect = document.getElementById('model-select');
+    const podcastAudio = document.getElementById('podcast-audio');
+    const sourcesList = document.getElementById('sources-list');
+    const generatePodcastBtn = document.getElementById('generate-podcast-btn');
+    const generateReportBtn = document.getElementById('generate-report-btn');
+    const reportContainer = document.getElementById('report-container');
+    let lastQuery = "";
+
+    // 폼 제출 이벤트 (채팅 요청)
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const query = queryInput.value.trim();
+      if (!query) return;
+      lastQuery = query;
+      queryInput.value = '';
+      
+      // 선택된 모델 값 가져오기
+      const model = modelSelect.value;
+      
+      // 이전 결과 초기화
+      podcastAudio.style.display = 'none';
+      podcastAudio.querySelector('source').src = "";
+      generatePodcastBtn.disabled = false;
+      generatePodcastBtn.innerHTML = '팟캐스트 생성';
+      generateReportBtn.disabled = false;
+      generateReportBtn.innerHTML = '보고서 생성';
+      reportContainer.innerHTML = "<p>보고서 없음</p>";
+      
+      appendChatBubble('user', `<strong>사용자:</strong><br>${query}`);
+      const botBubbleId = 'bot-' + Date.now();
+      appendChatBubble('bot', `<strong>봇:</strong><br><span id="${botBubbleId}"><span class="loading-spinner"></span> 검색 중...</span>`);
+      
+      // 모델 정보를 GET 파라미터로 전송
+      const evtSource = new EventSource(`/stream_search?query=${encodeURIComponent(query)}&model=${encodeURIComponent(model)}`);
+      const botResponseElem = document.getElementById(botBubbleId);
+      let markdownContent = "";
+      
+      evtSource.addEventListener('sources', function(event) {
+        try {
+          const parsedData = JSON.parse(event.data);
+          if (parsedData.sources && parsedData.sources.length > 0) {
+            sourcesList.innerHTML = "";
+            parsedData.sources.forEach(source => {
+              const sourceItem = document.createElement('div');
+              sourceItem.className = 'source-item';
+              sourceItem.innerHTML = `
+                <a href="${source.url}" target="_blank" class="source-link">
+                  ${source.title}
+                </a>
+              `;
+              sourcesList.appendChild(sourceItem);
+            });
+          } else {
+            sourcesList.innerHTML = "<p>출처 없음</p>";
+          }
+        } catch(e) {
+          console.error("출처 이벤트 데이터 파싱 에러:", e);
+        }
+      });
+      
+      evtSource.onmessage = function(event) {
+        if (event.data.trim() === "") {
+          evtSource.close();
+        } else {
+          markdownContent += event.data;
+          botResponseElem.innerHTML = marked.parse(markdownContent);
+          chatArea.scrollTop = chatArea.scrollHeight;
+        }
+      };
+      
+      evtSource.onerror = function(event) {
+        evtSource.close();
+      };
+    });
+
+    // 팟캐스트 생성 버튼 클릭 이벤트 리스너 추가
+    generatePodcastBtn.addEventListener("click", function() {
+      if (!lastQuery) {
+        alert("먼저 쿼리를 입력하세요.");
+        return;
+      }
+      generatePodcast(lastQuery);
+    });
+
+    // 보고서 생성 버튼 클릭 이벤트 리스너 추가
+    generateReportBtn.addEventListener("click", function() {
+      if (!lastQuery) {
+        alert("먼저 쿼리를 입력하세요.");
+        return;
+      }
+      generateReport(lastQuery);
+    });
+
+    function appendChatBubble(sender, htmlContent) {
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble ' + sender;
+      bubble.innerHTML = htmlContent;
+      chatArea.appendChild(bubble);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function generatePodcast(query) {
+      generatePodcastBtn.disabled = true;
+      generatePodcastBtn.innerHTML = '<span class="loading-spinner"></span> 팟캐스트 생성중...';
+      const formData = new FormData();
+      formData.append("query", query);
+      formData.append("model", modelSelect.value);
+      fetch('/generate_podcast', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        generatePodcastBtn.disabled = false;
+        generatePodcastBtn.innerHTML = '팟캐스트 생성';
+        if (data.error) {
+          appendChatBubble('bot', `<strong>봇:</strong><br>오류 발생: ${data.error}`);
+        } else {
+          podcastAudio.querySelector('source').src = data.podcast_url;
+          podcastAudio.load();
+          podcastAudio.style.display = 'block';
+        }
+      })
+      .catch(error => {
+        generatePodcastBtn.disabled = false;
+        generatePodcastBtn.innerHTML = '팟캐스트 생성';
+        appendChatBubble('bot', `<strong>봇:</strong><br>오류 발생: ${error}`);
+      });
+    }
+
+    function generateReport(query) {
+      generateReportBtn.disabled = true;
+      generateReportBtn.innerHTML = '<span class="loading-spinner"></span> 보고서 생성중...';
+      reportContainer.innerHTML = `<div class="loading-spinner"></div> 보고서 생성중...`;
+      const formData = new FormData();
+      formData.append("query", query);
+      formData.append("model", modelSelect.value);
+      fetch('/generate_report', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        generateReportBtn.disabled = false;
+        generateReportBtn.innerHTML = '보고서 생성';
+        if (data.error) {
+          reportContainer.innerHTML = `<p>오류 발생: ${data.error}</p>`;
+        } else {
+          reportContainer.innerHTML = `
+            <a href="${data.report_url}" target="_blank" class="source-link">
+              보고서 보기
+            </a>
+          `;
+        }
+      })
+      .catch(error => {
+        generateReportBtn.disabled = false;
+        generateReportBtn.innerHTML = '보고서 생성';
+        reportContainer.innerHTML = `<p>오류 발생: ${error}</p>`;
+      });
+    }
+  </script>
+</body>
+</html>

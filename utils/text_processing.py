@@ -1,18 +1,7 @@
-from konlpy.tag import Okt
-from stopwords import get_stopwords
 import openai
-import google.generativeai as genai
 from datetime import datetime
 from utils.config import GEMINI_API_KEY
-genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel('gemini-1.5-pro-002')
-okt = Okt()
-korean_stopwords = set(get_stopwords('ko'))
 
-def preprocess_text(text):
-    tokens = okt.morphs(text)
-    processed_tokens = [token for token in tokens if token not in korean_stopwords and token.isalnum()]
-    return ' '.join(processed_tokens)
 
 # def extract_keywords_openai(query):
 #     current_year = datetime.now().year
@@ -78,11 +67,8 @@ def extract_keywords_openai(query,model="chatgpt"):
                 presence_penalty=0.2
             )
             return response.choices[0].message.content.strip()
-        elif model.lower() == "gemini":
-            response = gemini_model.generate_content(prompt)
-            return response.text.strip()
         else:
-            raise ValueError("Invalid model specified. Choose 'chatgpt' or 'gemini'.")
+            raise ValueError("Invalid model specified. Choose 'chatgpt'")
     except Exception as e:
         print(f"API Error ({model}): {e}")
         return query
